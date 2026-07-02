@@ -18,10 +18,7 @@ train-job:           ## Bradley-Terry prior vs baselines, register champion
 	hops job deploy taste-train pipelines/train.py \
 		--env pandas-training-pipeline --run --wait --overwrite
 
-serve:               ## deploy the pair-scoring KServe endpoint
-	python3 serving/deploy.py
-
-app:                 ## deploy the Streamlit game
+app:                 ## deploy the Streamlit game (v1 inference lives in-app)
 	python3 app/deploy_app.py
 
 retrain-job:         ## flywheel: swipe train-pairs + pawpularity -> challenger (schedule daily)
@@ -30,4 +27,4 @@ retrain-job:         ## flywheel: swipe train-pairs + pawpularity -> challenger 
 
 help:
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/  --/'
-.PHONY: pawpularity benchmark-job embed-fleet insert train-job serve app retrain-job help
+.PHONY: pawpularity benchmark-job embed-fleet insert train-job app retrain-job help

@@ -64,26 +64,25 @@ pet"), score-regression-then-rank. k-fold CV mean. Register `pet_taste` with
 card + images (pairwise ROC, calibration, accuracy-vs-score-gap,
 run-progression). Blocked by: F3. Skill: hops-train.
 
-### I1. serving -- pair scorer (KServe, custom python deployment)
-`serving/predictor.py`: input [{left_id, right_id}] (or raw embeddings for
-never-seen images), online FV lookup, returns P(left) + both embeddings (the app
-needs them for the per-user layer). Logs served pairs. Cloned env pinning the
-training stack. Blocked by: T1. Skill: hops-online-inference.
+### I1. app -- the game, and the online inference pipeline (Streamlit on Hopsworks)
+No KServe deployment in v1: every pool pet is pre-embedded, so pair scoring is
+one dot product on 768 floats -- an endpoint would be a fake predictor wrapping
+a lookup. The app IS the inference pipeline: loads `w_global.npy` from the model
+registry at session start; pair display; secret model pick; per-user Bayesian
+logistic in session state updated per swipe; two rolling accuracy curves (global
+vs personalized) computed on measure pairs only; swipe logging to
+`swipe_events`. `.streamlit/config.toml` fileWatcherType=none.
+KServe returns in v2 with "upload YOUR pet" (frozen encoder at request time =
+genuinely heavy = real predictor). Blocked by: T1. Skill: hops-app.
 
-### I2. app -- the game (Streamlit on Hopsworks)
-`app/app.py`: pair display; secret model pick; per-user Bayesian logistic in
-session state updated per swipe; two rolling accuracy curves (global vs
-personalized) computed on measure pairs only; swipe logging to `swipe_events`.
-`.streamlit/config.toml` fileWatcherType=none. Blocked by: I1. Skill: hops-app.
-
-### I3. flywheel -- retrain from swipes (scheduled Hopsworks JOB)
+### I2. flywheel -- retrain from swipes (scheduled Hopsworks JOB)
 `pipelines/retrain.py`: swipe_events (train pairs only) + pawpularity pairs ->
 retrain global prior -> register challenger; fixed eval pairs never move.
-Blocked by: I2. Skill: hops-job / hops-monitoring.
+Blocked by: I1. Skill: hops-job / hops-monitoring.
 
 ## Order
 
-F1 -> F2 -> F3 -> T1 -> I1 -> I2 -> I3. Pawpularity (kaggle creds) gates F2's
+F1 -> F2 -> F3 -> T1 -> I1 -> I2. Pawpularity (kaggle creds) gates F2's
 benchmark and T1; the pool download and scaffolding are not gated.
 
 ## Honesty rules (README-bound)
