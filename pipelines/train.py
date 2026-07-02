@@ -192,19 +192,30 @@ def make_plots(summary, all_gap_records, calib_records, out):
 def register(summary, final_C, w_global, plots_dir):
     import hopsworks
     from taste_features import ENCODER, MODEL_ID, EMBED_DIM
+    from taste_online import TasteSpace
 
     stage = os.path.join("/tmp", "pet_taste_artifact")
     shutil.rmtree(stage, ignore_errors=True)
     os.makedirs(stage)
     np.save(os.path.join(stage, "w_global.npy"), w_global)
+
+    # the per-user layer's low-dim taste subspace: top-K PCA of the pool
+    proj = hopsworks.login()
+    fs = proj.get_feature_store()
+    pool = fs.get_feature_group("pet_embeddings", 1).read()
+    pool_emb = np.stack(pool["emb"].map(np.asarray).values).astype(np.float64)
+    space = TasteSpace.fit(w_global, pool_emb, k=24)
+    space.save(os.path.join(stage, "taste_space.npz"))
+    print(f"taste space: {space.dim - 1} PCs over {len(pool_emb):,} pool pets",
+          flush=True)
+
     meta = {"encoder": ENCODER, "model_id": MODEL_ID, "dim": EMBED_DIM,
-            "C": final_C, "cv": summary, "sigma0_default": 0.3}
+            "C": final_C, "cv": summary}
     with open(os.path.join(stage, "meta.json"), "w") as f:
         json.dump(meta, f, indent=2)
     for png in glob.glob(os.path.join(plots_dir, "*.png")):
         shutil.copy(png, stage)
 
-    proj = hopsworks.login()
     mr = proj.get_model_registry()
     model = mr.python.create_model(
         name="pet_taste",

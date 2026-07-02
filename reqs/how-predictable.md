@@ -23,8 +23,13 @@ learns the user: ~50-60% cold, ~70% after 20-30 swipes. The line is the product.
   converted to preference pairs. Trains on the task the game plays.
 - Images -> vectors at the door: one frozen encoder (benchmark DINOv2 vs SigLIP
   vs CLIP B/32), embeddings in an online FG, never pixels.
-- Per-user layer: Bayesian logistic regression on embedding features, Laplace
-  posterior, updated every swipe, lives in the app session.
+- Per-user layer: Bayesian logistic in a LOW-DIM taste subspace (ADF, diagonal
+  Gaussian), in the app session. Raw 768-d is unlearnable in 30 swipes (~1
+  effective dim of info per swipe); phi(x) = [crowd logit, top-24 pool PCs],
+  prior mean [1, 0...] = "start as the crowd, learn your delta". Simulation
+  (2026-07-02): global flat 61%, personal 61% -> 71% @ swipe 20-30 -> 77% @
+  40-60; active selection +2.2pt held-out over random at swipe 20. The
+  TasteSpace (PCA + logit scale) ships inside the pet_taste model artifact.
 - Active pair selection trains, randomly-interleaved pairs measure. The accuracy
   line is computed ONLY on the random measure pairs. Non-negotiable.
 - The UI line shows global-model accuracy AND personalized accuracy; the gap is

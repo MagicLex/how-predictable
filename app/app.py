@@ -27,7 +27,8 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from taste_online import UserPosterior, global_prob, select_pair   # noqa: E402
+from taste_online import (TasteSpace, UserPosterior, global_prob,   # noqa: E402
+                          select_pair)
 
 POOL_DIR = ROOT / "data" / "pool"
 FEEDBACK_DIR = ROOT / "data" / "feedback"
@@ -51,9 +52,8 @@ def load_model():
     models = mr.get_models("pet_taste")
     champ = max(models, key=lambda m: m.version)
     d = champ.download()
-    w = np.load(os.path.join(d, "w_global.npy"))
-    meta = json.load(open(os.path.join(d, "meta.json")))
-    return w, meta, champ.version
+    space = TasteSpace.load(os.path.join(d, "taste_space.npz"))
+    return space, champ.version
 
 
 @st.cache_resource
@@ -88,7 +88,7 @@ def _new_pair(pet_ids, emb, post, rng):
     st.session_state.pair = {
         "i": int(i), "j": int(j), "kind": kind,
         "p_personal": post.predict(x),
-        "p_global": global_prob(st.session_state.w_global, x),
+        "p_global": global_prob(st.session_state.space, x),
     }
 
 
@@ -122,13 +122,13 @@ def _init_session():
     s = st.session_state
     if "sid" in s:
         return
-    w, meta, version = load_model()
+    space, version = load_model()
     pet_ids, emb = load_pool()
     s.sid = uuid.uuid4().hex[:12]
-    s.w_global = w
+    s.space = space
     s.model_version = version
     s.pet_ids, s.emb = pet_ids, emb
-    s.posterior = UserPosterior(w, sigma0=meta.get("sigma0_default", 0.3))
+    s.posterior = UserPosterior(space)
     s.rng = np.random.default_rng()
     s.hits_personal, s.hits_global = [], []
     s.n_swipes = 0

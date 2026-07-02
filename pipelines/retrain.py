@@ -72,9 +72,7 @@ def load_pawpularity(fs):
     return emb, df["score"].values.astype(int)
 
 
-def swipe_pair_features(fs, swipes):
-    fg = fs.get_feature_group("pet_embeddings", 1)
-    pool = fg.read()
+def swipe_pair_features(pool, swipes):
     emb_of = dict(zip(pool["pet_id"].astype(int),
                       pool["emb"].map(np.asarray)))
     tr = swipes[swipes.pair_kind == "train"]
@@ -105,7 +103,8 @@ def main():
         return
 
     emb, scores = load_pawpularity(fs)
-    (Xs, ys), (Xm, ym) = swipe_pair_features(fs, swipes)
+    pool = fs.get_feature_group("pet_embeddings", 1).read()
+    (Xs, ys), (Xm, ym) = swipe_pair_features(pool, swipes)
 
     mr = proj.get_model_registry()
     champ = max(mr.get_models("pet_taste"), key=lambda m: m.version)
@@ -154,10 +153,14 @@ def main():
         return
 
     import shutil
+    from taste_online import TasteSpace
     stage = "/tmp/pet_taste_challenger"
     shutil.rmtree(stage, ignore_errors=True)
     os.makedirs(stage)
     np.save(os.path.join(stage, "w_global.npy"), w_new)
+    pool_emb = np.stack(pool["emb"].map(np.asarray).values).astype(np.float64)
+    TasteSpace.fit(w_new, pool_emb, k=24).save(
+        os.path.join(stage, "taste_space.npz"))
     meta["cv"] = {"bt": {"acc": cv_acc, "se": cv_se}}
     meta["n_swipe_train_pairs"] = int(len(ys)) if ys is not None else 0
     with open(os.path.join(stage, "meta.json"), "w") as f:
