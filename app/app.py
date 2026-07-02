@@ -19,6 +19,7 @@ import json
 import os
 import sys
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -111,6 +112,7 @@ def _on_click(chose_left):
         "p_left_global": round(pair["p_global"], 4),
         "p_left_personal": round(pair["p_personal"], 4),
         "pair_kind": pair["kind"], "model_version": s.model_version,
+        "swiped_at": datetime.now(timezone.utc).isoformat(),
     })
     s.n_swipes += 1
     _new_pair(s.pet_ids, s.emb, s.posterior, s.rng)
