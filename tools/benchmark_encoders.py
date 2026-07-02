@@ -11,7 +11,7 @@ unappealing" direction, which is train.py's zero-shot baseline. DINOv2 has no
 text tower; if it wins, the npy is skipped and train.py's zero-shot row comes
 from this benchmark's JSON instead.
 
-    hops job deploy taste-benchmark tools/benchmark_encoders.py \
+    hops job deploy predictable-benchmark tools/benchmark_encoders.py \
         --env torch-training-pipeline --run --wait --overwrite
 
 Output: data/benchmark_encoders.json, data/appeal_direction.npy
@@ -27,7 +27,7 @@ from PIL import Image
 
 def _find_root():
     cand = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    for p in [cand] + sorted(glob.glob("/hopsfs/Users/*/taste-machine")):
+    for p in [cand] + sorted(glob.glob("/hopsfs/Users/*/how-predictable")):
         if os.path.exists(os.path.join(p, "taste_features.py")):
             return p
     raise RuntimeError("repo root not found")

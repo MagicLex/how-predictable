@@ -2,20 +2,20 @@
 
 Requires the shell job to exist first (gives us an appPath to clone):
 
-    hops job deploy taste-embed pipelines/embed.py --env torch-training-pipeline
+    hops job deploy predictable-embed pipelines/embed.py --env torch-training-pipeline
 
 Then:  python tools/launch_fleet.py
 """
 import hopsworks
 
-ZIPS = {"taste-embed-a": "587", "taste-embed-b": "588"}
+ZIPS = {"predictable-embed-a": "587", "predictable-embed-b": "588"}
 CAP = 15000
 
 
 def main():
     proj = hopsworks.login()
     ja = proj.get_job_api()
-    base = ja.get_job("taste-embed")
+    base = ja.get_job("predictable-embed")
     for name, zip_name in ZIPS.items():
         args = f"pool --zip {zip_name} --cap {CAP}"
         cfg = dict(base.config)

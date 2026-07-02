@@ -23,7 +23,7 @@ import pandas as pd
 
 def _find_root():
     cand = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    for p in [cand] + sorted(glob.glob("/hopsfs/Users/*/taste-machine")):
+    for p in [cand] + sorted(glob.glob("/hopsfs/Users/*/how-predictable")):
         if os.path.exists(os.path.join(p, "taste_features.py")):
             return p
     raise RuntimeError("repo root not found")

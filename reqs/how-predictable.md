@@ -1,4 +1,4 @@
-# taste-machine -- ML system spec
+# how-predictable -- ML system spec
 
 Hot-or-not for pets with a live accuracy line. Two pet photos side by side, the
 user clicks the one they like. Before the click, the model secretly predicts

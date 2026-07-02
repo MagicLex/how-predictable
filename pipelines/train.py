@@ -17,7 +17,7 @@ Honesty: C for bt is picked on a validation split of each fold's TRAIN photos
 pairs; accuracy-vs-gap is reported on all-gap pairs.
 
 Runs as a Hopsworks job (pandas env):
-    hops job deploy taste-train pipelines/train.py \
+    hops job deploy predictable-train pipelines/train.py \
         --env pandas-training-pipeline --run --wait --overwrite
 """
 import glob
@@ -33,7 +33,7 @@ import numpy as np
 
 def _find_root():
     cand = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    for p in [cand] + sorted(glob.glob("/hopsfs/Users/*/taste-machine")):
+    for p in [cand] + sorted(glob.glob("/hopsfs/Users/*/how-predictable")):
         if os.path.exists(os.path.join(p, "taste_features.py")):
             return p
     raise RuntimeError("repo root not found")
