@@ -241,8 +241,10 @@ PAGE = """<!doctype html>
 </style></head><body>
 <header>
   <h1>how <em>predictable.</em></h1>
-  <div class="tag">Click the pet you like more. The machine has already guessed
-  which one you&rsquo;ll pick &mdash; watch it learn you.</div>
+  <div class="tag">Click the pet <b>you</b> like more &mdash; there is no right
+  answer, only your taste. The machine has already guessed which one you&rsquo;ll
+  pick. Be consistent and watch it learn you; click at random and it learns
+  nothing, which is also fair.</div>
 </header>
 <div class="board">
   <div class="stats">
