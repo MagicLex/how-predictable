@@ -302,6 +302,15 @@ render();
 </body></html>"""
 
 
+# The platform proxy does NOT strip its prefix: requests arrive as
+# $APP_BASE_URL_PATH/... , so the app mounts under it when set.
+if BASE:
+    asgi = FastAPI()
+    asgi.mount(BASE, app)
+else:
+    asgi = app
+
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("APP_PORT", 8000)))
+    uvicorn.run(asgi, host="0.0.0.0", port=int(os.environ.get("APP_PORT", 8000)))
