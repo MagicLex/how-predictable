@@ -302,15 +302,19 @@ render();
 
 
 # The platform proxy does NOT strip its prefix: requests arrive as
-# $APP_BASE_URL_PATH/... , so the app mounts under it when set. Startup events
-# of a MOUNTED sub-app never fire (Starlette runs only the outer lifespan), so
-# boot() attaches to the outer app explicitly.
-if BASE:
-    asgi = FastAPI()
-    asgi.mount(BASE, app)
-else:
-    asgi = app
-asgi.add_event_handler("startup", boot)
+# $APP_BASE_URL_PATH/... , so the app mounts under it. Startup events of a
+# MOUNTED sub-app never fire and starlette >= 1.0 dropped on_event entirely,
+# so boot() runs in the OUTER app's lifespan.
+from contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def _lifespan(_):
+    boot()
+    yield
+
+asgi = FastAPI(lifespan=_lifespan)
+asgi.mount(BASE or "/", app)
 
 
 if __name__ == "__main__":

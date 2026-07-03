@@ -21,7 +21,8 @@ _here = Path(__file__).resolve()
 rel = str(_here).split("/hopsfs/", 1)[1]
 APP_PATH = str(Path(rel).parent / "server.py")
 ENTRYPOINT = ('bash -lc "python -m uv pip install --system --no-cache '
-              f'fastapi uvicorn && exec python /hopsfs/{rel.rsplit("/", 1)[0]}/server.py"')
+              "'fastapi==0.139.0' 'uvicorn==0.49.0' && "
+              f'exec python /hopsfs/{rel.rsplit("/", 1)[0]}/server.py"')
 
 
 def _pods():
