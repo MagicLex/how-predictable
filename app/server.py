@@ -175,6 +175,15 @@ async def swipe(request: Request):
     return response
 
 
+@app.post("/reset")
+def reset(request: Request):
+    sid = request.cookies.get("sid")
+    SESSIONS.pop(sid, None)
+    response = JSONResponse({"ok": True})
+    response.delete_cookie("sid", path=BASE or "/")
+    return response
+
+
 @app.get("/")
 def index(request: Request):
     s, is_new = _session(request)
@@ -249,7 +258,8 @@ PAGE = """<!doctype html>
   <div class="card" id="card-right" onclick="pick('right')">
     <img id="img-right" alt="pet B"><div class="pick">this one</div></div>
 </div>
-<div class="hint">or use &larr; &rarr; on a keyboard</div>
+<div class="hint">or use &larr; &rarr; on a keyboard &middot;
+  <a href="#" id="reset" style="color:var(--dim)">start over</a></div>
 <footer>the top number counts only randomly-interleaved measure pairs; the
 actively-selected training pairs never score. gap between the curves = what it
 learned about <i>you</i>, not the crowd. supervised online preference learning,
@@ -302,6 +312,10 @@ async function pick(side){
 document.addEventListener("keydown",e=>{
   if(e.key==="ArrowLeft")pick("left");
   if(e.key==="ArrowRight")pick("right");});
+document.getElementById("reset").addEventListener("click",async e=>{
+  e.preventDefault();
+  await fetch(BASE+"/reset",{method:"POST"});
+  location.reload();});
 render();
 </script>
 </body></html>"""
