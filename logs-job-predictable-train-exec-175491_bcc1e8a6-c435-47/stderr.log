@@ -1,28 +1,0 @@
-2026-07-03 10:58:08,326 INFO: Python Engine initialized.
-2026-07-03 10:58:13,947 INFO: Computing insert statistics
-2026-07-03 10:58:14,713 WARNING: VersionWarning: Incremented version to `2`.
-
-2026-07-03 10:58:40,510 INFO: Connection closed.
-2026-07-03 10:58:40,611 INFO: Python Engine initialized.
-2026-07-03 10:58:45,890 WARNING: ProvenanceWarning: Model schema cannot not be inferred without both the feature view and the training dataset version.
-
-  0%|          | 0/6 [00:00<?, ?it/s]Creating model folder:   0%|          | 0/6 [00:00<?, ?it/s]Creating model folder:  17%|█▋        | 1/6 [00:00<00:04,  1.01it/s]Uploading model files:  17%|█▋        | 1/6 [00:00<00:04,  1.01it/s]Uploading model files (0 dirs, 0 files):  17%|█▋        | 1/6 [00:00<00:04,  1.01it/s]
-Uploading /tmp/pet_taste_artifact/meta.json: 0.000%|          | 0/432 elapsed<00:00 remaining<?[A
-Uploading /tmp/pet_taste_artifact/meta.json: 100.000%|██████████| 432/432 elapsed<00:00 remaining<00:00[AUploading /tmp/pet_taste_artifact/meta.json: 100.000%|██████████| 432/432 elapsed<00:00 remaining<00:00
-Uploading model files (0 dirs, 1 files):  17%|█▋        | 1/6 [00:02<00:04,  1.01it/s]
-Uploading /tmp/pet_taste_artifact/w_global.npy: 0.000%|          | 0/6272 elapsed<00:00 remaining<?[A
-Uploading /tmp/pet_taste_artifact/w_global.npy: 100.000%|██████████| 6272/6272 elapsed<00:00 remaining<00:00[AUploading /tmp/pet_taste_artifact/w_global.npy: 100.000%|██████████| 6272/6272 elapsed<00:00 remaining<00:00
-Uploading model files (0 dirs, 2 files):  17%|█▋        | 1/6 [00:03<00:04,  1.01it/s]
-Uploading /tmp/pet_taste_artifact/taste_space.npz: 0.000%|          | 0/154340 elapsed<00:00 remaining<?[A
-Uploading /tmp/pet_taste_artifact/taste_space.npz: 100.000%|██████████| 154340/154340 elapsed<00:00 remaining<00:00[AUploading /tmp/pet_taste_artifact/taste_space.npz: 100.000%|██████████| 154340/154340 elapsed<00:00 remaining<00:00
-Uploading model files (0 dirs, 3 files):  17%|█▋        | 1/6 [00:04<00:04,  1.01it/s]
-Uploading /tmp/pet_taste_artifact/acc_vs_gap.png: 0.000%|          | 0/36925 elapsed<00:00 remaining<?[A
-Uploading /tmp/pet_taste_artifact/acc_vs_gap.png: 100.000%|██████████| 36925/36925 elapsed<00:00 remaining<00:00[AUploading /tmp/pet_taste_artifact/acc_vs_gap.png: 100.000%|██████████| 36925/36925 elapsed<00:00 remaining<00:00
-Uploading model files (0 dirs, 4 files):  17%|█▋        | 1/6 [00:05<00:04,  1.01it/s]
-Uploading /tmp/pet_taste_artifact/model_comparison.png: 0.000%|          | 0/28259 elapsed<00:00 remaining<?[A
-Uploading /tmp/pet_taste_artifact/model_comparison.png: 100.000%|██████████| 28259/28259 elapsed<00:00 remaining<00:00[AUploading /tmp/pet_taste_artifact/model_comparison.png: 100.000%|██████████| 28259/28259 elapsed<00:00 remaining<00:00
-Uploading model files (0 dirs, 5 files):  17%|█▋        | 1/6 [00:06<00:04,  1.01it/s]
-Uploading /tmp/pet_taste_artifact/calibration.png: 0.000%|          | 0/36583 elapsed<00:00 remaining<?[A
-Uploading /tmp/pet_taste_artifact/calibration.png: 100.000%|██████████| 36583/36583 elapsed<00:00 remaining<00:00[AUploading /tmp/pet_taste_artifact/calibration.png: 100.000%|██████████| 36583/36583 elapsed<00:00 remaining<00:00
-Uploading model files (0 dirs, 6 files):  17%|█▋        | 1/6 [00:07<00:04,  1.01it/s]Uploading model files (0 dirs, 6 files):  33%|███▎      | 2/6 [00:07<00:16,  4.17s/it]Uploading input_example and model_schema:  33%|███▎      | 2/6 [00:07<00:16,  4.17s/it]Registering model:  33%|███▎      | 2/6 [00:07<00:16,  4.17s/it]                       Registering model:  67%|██████▋   | 4/6 [00:08<00:03,  1.83s/it]Waiting for model registration:  67%|██████▋   | 4/6 [00:08<00:03,  1.83s/it]Waiting for model registration:  83%|████████▎ | 5/6 [00:13<00:02,  2.89s/it]Model export complete:  83%|████████▎ | 5/6 [00:13<00:02,  2.89s/it]         Model export complete: 100%|██████████| 6/6 [00:13<00:00,  2.25s/it]
-2026-07-03 10:59:00,464 INFO: Connection closed.

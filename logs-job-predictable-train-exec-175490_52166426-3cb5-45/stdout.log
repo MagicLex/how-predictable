@@ -1,28 +1,0 @@
-
-Logged in to project, explore it here https://eu-west.cloud.hopsworks.ai/p/33923
-Reading data from Hopsworks, using Hopsworks Feature Query Service.   Reading data from Hopsworks, using Hopsworks Feature Query Service..   Reading data from Hopsworks, using Hopsworks Feature Query Service...   Finished: Reading data from Hopsworks, using Hopsworks Feature Query Service (1.24s) 
-9,912 photos, emb dim 768
-fold 0: bt=0.708 (C=1.0) ridge=0.713
-fold 1: bt=0.722 (C=0.1) ridge=0.723
-fold 2: bt=0.712 (C=0.1) ridge=0.709
-fold 3: bt=0.729 (C=0.1) ridge=0.727
-fold 4: bt=0.723 (C=0.1) ridge=0.721
-{
-  "bt": {
-    "acc": 0.7188000000000001,
-    "se": 0.0034544536471054245,
-    "auc": 0.7864177749758607
-  },
-  "ridge_rank": {
-    "acc": 0.7184,
-    "se": 0.0030015412707474114
-  },
-  "coin": {
-    "acc": 0.5,
-    "se": 0.0
-  },
-  "zero_shot": {
-    "acc": 0.5115,
-    "se": 0.0
-  }
-}
