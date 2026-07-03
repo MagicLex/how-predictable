@@ -10,8 +10,6 @@ Three FGs, one FV:
                          swiped_at (last-activity pattern).
   taste_fv           v1  pawpularity_photos[emb -> score] for training.
 
-Also writes app/pool_manifest.parquet (pet ids the app samples pairs from).
-
     python pipelines/insert_fg.py
 """
 import glob
@@ -102,10 +100,6 @@ def main():
         online_enabled=False)
     fg_sw.insert(swipes, write_options={"wait_for_job": False})
     print("swipe_events v1 ready (bootstrap row)")
-
-    manifest = pool[["pet_id", "n_photos"]].copy()
-    manifest.to_parquet(os.path.join(ROOT, "app", "pool_manifest.parquet"))
-    print(f"app/pool_manifest.parquet written ({len(manifest):,} ids)")
 
 
 if __name__ == "__main__":
