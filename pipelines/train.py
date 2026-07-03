@@ -84,13 +84,8 @@ def evaluate():
     emb, scores = load_data()
     rng = np.random.default_rng(SEED)
     fold_of = assign_folds(len(scores), FOLDS, rng)
-    appeal_path = os.path.join(DATA, "appeal_direction.npy")
-    w_appeal = np.load(appeal_path) if os.path.exists(appeal_path) else None
-    if w_appeal is None:
-        print("WARNING: no appeal_direction.npy -- zero-shot baseline skipped",
-              flush=True)
 
-    acc = {m: [] for m in ["bt", "ridge_rank", "zero_shot"]}
+    acc = {m: [] for m in ["bt", "ridge_rank"]}
     aucs, chosen_C, all_gap_records, calib_records = [], [], [], []
 
     for k in range(FOLDS):
@@ -124,16 +119,19 @@ def evaluate():
         acc["ridge_rank"].append(
             float(np.mean([(s[a] > s[b]) == bool(y) for a, b, y in te_pairs])))
 
-        if w_appeal is not None:
-            za = emb @ w_appeal
-            acc["zero_shot"].append(
-                float(np.mean([(za[a] > za[b]) == bool(y) for a, b, y in te_pairs])))
         print(f"fold {k}: bt={acc['bt'][-1]:.3f} (C={C}) "
               f"ridge={acc['ridge_rank'][-1]:.3f}", flush=True)
 
     summary = {m: {"acc": float(np.mean(v)), "se": float(np.std(v) / np.sqrt(FOLDS))}
                for m, v in acc.items() if v}
     summary["coin"] = {"acc": 0.5, "se": 0.0}
+    # zero-shot floor is computed once by the benchmark job (CLIP prompts, no
+    # training); quoted here, not recomputed -- note: benchmark subset, not CV
+    bench_path = os.path.join(DATA, "benchmark_encoders.json")
+    if os.path.exists(bench_path):
+        with open(bench_path) as f:
+            summary["zero_shot"] = {"acc": json.load(f)["zero_shot"]["acc"],
+                                    "se": 0.0}
     summary["bt"]["auc"] = float(np.mean(aucs))
     final_C = max(set(chosen_C), key=chosen_C.count)
 

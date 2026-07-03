@@ -6,15 +6,15 @@ training uses), and cross-validates a logistic head on embedding differences.
 The winner gets pinned as taste_features.ENCODER (manual edit, on purpose --
 the pin is a reviewed decision, not a side effect).
 
-Also writes data/appeal_direction.npy: the winner's text-tower "appealing minus
-unappealing" direction, which is train.py's zero-shot baseline. DINOv2 has no
-text tower; if it wins, the npy is skipped and train.py's zero-shot row comes
-from this benchmark's JSON instead.
+The zero-shot appeal baseline (CLIP prompts, no training) is computed here once
+and written to the JSON; train.py quotes it from there. Only CLIP's BPE
+tokenizer ever runs (the siglip tokenizer needs sentencepiece, absent from the
+stock torch env -- see BLOCKERS).
 
     hops job deploy predictable-benchmark tools/benchmark_encoders.py \
-        --env predictable-torch --run --wait --overwrite
+        --env torch-training-pipeline --run --wait --overwrite
 
-Output: data/benchmark_encoders.json, data/appeal_direction.npy
+Output: data/benchmark_encoders.json
 """
 import glob
 import json
@@ -34,8 +34,7 @@ def _find_root():
 
 ROOT = _find_root()
 sys.path.insert(0, ROOT)
-from taste_features import (embed_images, zero_shot_appeal, ENCODERS,   # noqa: E402
-                            APPEAL_PROMPTS)
+from taste_features import embed_images, zero_shot_appeal, ENCODERS     # noqa: E402
 from taste_pairs import assign_folds, make_pairs, pair_features         # noqa: E402
 
 DATA = os.path.join(ROOT, "data")
@@ -75,26 +74,6 @@ def cv_pairwise_acc(emb, scores, rng):
     return float(np.mean(accs)), float(np.std(accs) / np.sqrt(FOLDS))
 
 
-def save_appeal_direction(winner):
-    if winner == "dinov2":
-        print("winner has no text tower -- appeal_direction.npy skipped", flush=True)
-        return
-    import torch
-    from transformers import AutoModel, AutoTokenizer
-    mid = ENCODERS[winner]["model_id"]
-    model = AutoModel.from_pretrained(mid); model.eval()
-    tok = AutoTokenizer.from_pretrained(mid)
-    with torch.no_grad():
-        t = tok(list(APPEAL_PROMPTS), padding=True, return_tensors="pt")
-        tf = model.get_text_features(**t)
-        if not isinstance(tf, torch.Tensor):
-            tf = tf.pooler_output
-        tf = tf / tf.norm(dim=-1, keepdim=True)
-    w = (tf[0] - tf[1]).numpy().astype(np.float64)
-    np.save(os.path.join(DATA, "appeal_direction.npy"), w)
-    print(f"appeal_direction.npy saved ({winner}, dim {len(w)})", flush=True)
-
-
 def main():
     imgs, scores = load_subset()
     print(f"{len(imgs)} photos, score mean {scores.mean():.1f}", flush=True)
@@ -117,7 +96,6 @@ def main():
     results["winner"] = best
     with open(os.path.join(DATA, "benchmark_encoders.json"), "w") as f:
         json.dump(results, f, indent=2)
-    save_appeal_direction(best)
     print(f"WINNER: {best} -- pin taste_features.ENCODER accordingly", flush=True)
 
 

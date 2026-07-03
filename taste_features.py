@@ -63,25 +63,25 @@ def embed_images(pil_images, batch_size=64, encoder=None):
 
 # Zero-shot appeal baseline: the honest bar any trained head must beat.
 # Cosine against contrastive prompts; score = appealing - unappealing.
-# Text tower exists for clip/siglip only (dinov2 has none -> baseline uses clip).
+# Zero-shot appeal baseline: always CLIP (BPE tokenizer, no sentencepiece --
+# the siglip/T5 tokenizer family crashes on the stock torch env). The baseline
+# does not need to live in the winner's space: it is a floor computed once in
+# the benchmark, and quoted from there by the training pipeline.
 APPEAL_PROMPTS = ("an adorable, sharp, well-lit photo of a cute pet looking at the camera",
                   "a blurry, dark, unappealing photo of a pet")
 
 
-def zero_shot_appeal(pil_images, batch_size=64, encoder=None):
-    """(n,) zero-shot appeal score per image."""
-    key = encoder or ENCODER
-    if key == "dinov2":
-        key = "clip"
-    model, proc = _load(key)
+def zero_shot_appeal(pil_images, batch_size=64):
+    """(n,) zero-shot appeal score per image, in CLIP space."""
+    model, proc = _load("clip")
     from transformers import AutoTokenizer
-    tok = AutoTokenizer.from_pretrained(ENCODERS[key]["model_id"])
+    tok = AutoTokenizer.from_pretrained(ENCODERS["clip"]["model_id"])
     with torch.no_grad():
         t = tok(list(APPEAL_PROMPTS), padding=True, return_tensors="pt")
         tf = model.get_text_features(**t)
         if not isinstance(tf, torch.Tensor):
             tf = tf.pooler_output
         tf = tf / tf.norm(dim=-1, keepdim=True)
-    img = torch.from_numpy(embed_images(pil_images, batch_size, encoder=key))
+    img = torch.from_numpy(embed_images(pil_images, batch_size, encoder="clip"))
     s = (img @ tf.T).numpy()
     return s[:, 0] - s[:, 1]
