@@ -2,7 +2,7 @@
 
 Requires the shell job to exist first (gives us an appPath to clone):
 
-    hops job deploy predictable-embed pipelines/embed.py --env torch-training-pipeline
+    hops job deploy predictable-embed pipelines/embed.py --env predictable-torch
 
 Then:  python tools/launch_fleet.py
 """

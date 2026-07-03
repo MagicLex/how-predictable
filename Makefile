@@ -6,7 +6,7 @@ pawpularity:         ## download the scored cold-start set (needs ~/.kaggle/kagg
 
 benchmark-job:       ## encoder shoot-out on pawpularity pairwise CV (pins taste_features.ENCODER)
 	hops job deploy predictable-benchmark tools/benchmark_encoders.py \
-		--env torch-training-pipeline --run --wait --overwrite
+		--env predictable-torch --run --wait --overwrite
 
 embed-fleet:         ## shard-parallel embed jobs: petfinder zips + pawpularity -> data/emb/
 	python3 tools/launch_fleet.py

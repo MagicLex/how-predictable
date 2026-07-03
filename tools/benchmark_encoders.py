@@ -12,7 +12,7 @@ text tower; if it wins, the npy is skipped and train.py's zero-shot row comes
 from this benchmark's JSON instead.
 
     hops job deploy predictable-benchmark tools/benchmark_encoders.py \
-        --env torch-training-pipeline --run --wait --overwrite
+        --env predictable-torch --run --wait --overwrite
 
 Output: data/benchmark_encoders.json, data/appeal_direction.npy
 """
