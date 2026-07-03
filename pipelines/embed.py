@@ -135,9 +135,13 @@ def pawpularity_mode():
     for _, m in meta.iterrows():
         p = os.path.join(img_dir, f"{m.Id}.jpg")
         try:
-            imgs.append(Image.open(p).convert("RGB"))
+            im = Image.open(p).convert("RGB")
         except Exception:
             continue
+        # pawpularity photos are full-res (up to ~4000px); 256 of them in the
+        # batch buffer OOMs the pod. The encoder resizes to 224 anyway.
+        im.thumbnail((512, 512))
+        imgs.append(im)
         pend.append((m.Id, int(m.Pawpularity)))
         if len(imgs) >= BATCH * 4:
             _flush(rows, imgs, pend)
