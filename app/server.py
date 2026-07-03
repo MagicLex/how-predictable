@@ -84,7 +84,10 @@ def _new_pair(s):
                  "p_global": global_prob(STATE["space"], x)}
 
 
-def _session(request, response):
+def _session(request):
+    """Returns (session, is_new). The caller sets the cookie on its response
+    AFTER building the body -- mutating a built response corrupts
+    Content-Length."""
     now = time.time()
     for k in [k for k, v in SESSIONS.items() if now - v["seen"] > SESSION_TTL]:
         del SESSIONS[k]
@@ -92,16 +95,19 @@ def _session(request, response):
     if sid and sid in SESSIONS:
         s = SESSIONS[sid]
         s["seen"] = now
-        return s
+        return s, False
     sid = uuid.uuid4().hex[:12]
     s = {"sid": sid, "seen": now, "rng": np.random.default_rng(),
          "posterior": UserPosterior(STATE["space"]), "n_swipes": 0,
          "hits_personal": [], "hits_global": [], "last": None}
     _new_pair(s)
     SESSIONS[sid] = s
-    response.set_cookie("sid", sid, max_age=SESSION_TTL, httponly=True,
+    return s, True
+
+
+def _set_sid(response, s):
+    response.set_cookie("sid", s["sid"], max_age=SESSION_TTL, httponly=True,
                         samesite="lax", path=BASE or "/")
-    return s
 
 
 def _log_swipe(s, pair, y, pick_p):
@@ -145,38 +151,38 @@ def img(pet_id: int):
 
 @app.post("/swipe")
 async def swipe(request: Request):
-    response = JSONResponse(None)
-    s = _session(request, response)
+    s, is_new = _session(request)
     body = await request.json()
-    if body.get("n") != s["n_swipes"]:            # stale double-click; resend state
-        response.body = json.dumps(_payload(s)).encode()
-        return response
-    pair = s["pair"]
-    x = STATE["emb"][pair["i"]] - STATE["emb"][pair["j"]]
-    y = 1 if body.get("choice") == "left" else 0
-    pick_p = pair["p_personal"] > 0.5
-    pick_g = pair["p_global"] > 0.5
-    if pair["kind"] == "measure":
-        s["hits_personal"].append(bool(pick_p) == bool(y))
-        s["hits_global"].append(bool(pick_g) == bool(y))
-    conf = pair["p_personal"] if y else 1 - pair["p_personal"]
-    s["last"] = {"read_you": bool(pick_p) == bool(y),
-                 "confidence": round(100 * max(conf, 1 - conf))}
-    s["posterior"].update(x, y)
-    _log_swipe(s, pair, y, pick_p)
-    s["n_swipes"] += 1
-    _new_pair(s)
-    response.body = json.dumps(_payload(s)).encode()
+    if body.get("n") == s["n_swipes"]:            # else stale double-click: resend
+        pair = s["pair"]
+        x = STATE["emb"][pair["i"]] - STATE["emb"][pair["j"]]
+        y = 1 if body.get("choice") == "left" else 0
+        pick_p = pair["p_personal"] > 0.5
+        pick_g = pair["p_global"] > 0.5
+        if pair["kind"] == "measure":
+            s["hits_personal"].append(bool(pick_p) == bool(y))
+            s["hits_global"].append(bool(pick_g) == bool(y))
+        conf = pair["p_personal"] if y else 1 - pair["p_personal"]
+        s["last"] = {"read_you": bool(pick_p) == bool(y),
+                     "confidence": round(100 * max(conf, 1 - conf))}
+        s["posterior"].update(x, y)
+        _log_swipe(s, pair, y, pick_p)
+        s["n_swipes"] += 1
+        _new_pair(s)
+    response = JSONResponse(_payload(s))
+    if is_new:
+        _set_sid(response, s)
     return response
 
 
 @app.get("/")
 def index(request: Request):
-    response = HTMLResponse(PAGE)
-    s = _session(request, response)
-    boot_data = json.dumps(_payload(s))
-    response.body = PAGE.replace("__BASE__", BASE).replace(
-        "__BOOT__", boot_data).encode()
+    s, is_new = _session(request)
+    html = PAGE.replace("__BASE__", BASE).replace(
+        "__BOOT__", json.dumps(_payload(s)))
+    response = HTMLResponse(html)
+    if is_new:
+        _set_sid(response, s)
     return response
 
 
