@@ -2,110 +2,145 @@
 
 ![how predictable.](assets/banner.svg)
 
+[![awesome-ml-systems](https://img.shields.io/badge/awesome--ml--systems-%23005-34d399?labelColor=0b0e11&style=flat)](https://github.com/MagicLex/awesome-ml-systems)
+[![Hopsworks](https://img.shields.io/badge/built_on-Hopsworks-1CB182?labelColor=0b0e11&style=flat)](https://www.hopsworks.ai/)
+
 Two pets. Click the one you like. The machine has already guessed which one
-you'll pick, and the line at the top shows how often it reads you right. It
-starts near a coin flip and climbs as it learns you: that line is the product.
+you'll pick, and the line at the top shows how often it reads you right: near a
+coin flip when you arrive, climbing as a per-user Bayesian layer learns your
+taste, one click at a time. The line is the product.
 
-![model comparison](assets/model_comparison.png)
+## The result
 
-## What it shows
+**The crowd is 71.9% predictable from pixels alone.** A Bradley-Terry logistic
+head on frozen SigLIP embeddings, trained on preference pairs drawn from 9,912
+Pawpularity-scored shelter photos, called the crowd's pick on held-out pairs
+71.9% of the time. The zero-shot floor ("an adorable photo of a cute pet",
+no training) is a coin flip: all the signal is in the embedding geometry,
+none in the prompt.
 
-Online per-user preference learning on top of a crowd prior, as a game:
-
-- A **crowd model** (Bradley-Terry logistic head on frozen image embeddings)
-  trained on 9,912 PetFinder photos with real engagement scores (Kaggle
-  Pawpularity). It knows what everyone likes.
-- A **per-user Bayesian layer** that starts as the crowd and learns your delta,
-  one swipe at a time, in the app session. No account, no history: 25
-  parameters, updated in closed form per click.
-- The UI plots both: the frozen crowd model and your personalized model, on the
-  same swipes. The gap between the curves is what the machine learned about you.
-
-Supervised online preference learning. Not RL: nothing optimizes which pets you
-see for engagement; active selection maximizes information about your taste.
-
-## The two design decisions that matter
-
-**Personalization happens in 25 dimensions, not 768.** A swipe carries roughly
-one dimension of information, so 30 swipes cannot pin a 768-weight model.
-The per-user layer works on phi(x) = [crowd logit, top-24 pool PCs] with prior
-mean [1, 0, ..., 0]: "start as the crowd, learn where you disagree".
-Simulation before any deployment: crowd model flat at 61%, personalized 71%
-by swipe 20-30, 77% by 50.
-
-**The accuracy line only counts random pairs.** Two of three pairs are chosen
-actively (highest posterior uncertainty: they teach the model most). Actively
-chosen pairs are harder than average, so scoring them would corrupt the metric.
-Every third pair is uniform random and is the only one the accuracy line sees.
-Train pairs train, measure pairs measure.
-
-## FTI pipelines
-
-```mermaid
-flowchart LR
-    A[PetFinder dogs\n700k photos] -->|embed fleet| F1[pet_embeddings FG\nonline]
-    B[Pawpularity\n9,912 scored photos] -->|embed| F2[pawpularity_photos FG]
-    F2 --> FV[taste_fv]
-    FV -->|preference pairs\ngrouped CV| T[train job\nBradley-Terry prior]
-    T --> MR[(model registry\npet_taste + TasteSpace)]
-    MR --> APP[app: the game\nper-user Bayesian layer]
-    F1 --> APP
-    APP -->|swipes jsonl| FW[retrain job\npromotion gate]
-    FW --> MR
-```
-
-Feature, training and inference pipelines are independent programs joined
-through the Hopsworks feature store. The v1 app serves inference in-process
-(the model is a weight vector; a KServe endpoint would wrap a dot product in
-an HTTP hop). The day "upload your own pet" ships, the frozen encoder moves
-behind a real KServe deployment.
-
-The app itself is a custom server-rendered FastAPI service (no Streamlit, no
-front-end framework, no CDN). The model's pick for the current pair never
-leaves the server, so devtools cannot cheat the accuracy line.
-
-## Honest numbers
-
-Crowd model, 9,912 scored photos, preference pairs with score gap >= 10,
-grouped 5-fold CV (no photo on both sides of a split):
+Grouped 5-fold CV, score gap >= 10, no photo on both sides of a split:
 
 | model | pairwise accuracy |
-|---|---|
+|---|---:|
 | coin flip | 0.500 |
-| zero-shot appeal prompts (CLIP, no training) | 0.511 |
+| zero-shot appeal prompts (CLIP) | 0.511 |
 | ridge score-then-rank | 0.718 |
-| Bradley-Terry head (champion) | **0.719 +/- 0.003** (AUC 0.786) |
+| **Bradley-Terry head (champion)** | **0.719 +/- 0.003** (AUC 0.786) |
 
 Encoder shoot-out on the same task (3,000-photo subset): SigLIP 0.714,
 DINOv2 0.708, CLIP B/32 0.691. SigLIP is pinned; the DINOv2 gap is within
 noise, the CLIP gap is not.
 
+**The per-user layer learns in 25 dimensions, not 768.** A swipe carries
+roughly one dimension of information, so 30 swipes cannot pin a 768-weight
+model. Personalization works on phi(x) = [crowd logit, top-24 pool PCs] with
+prior mean [1, 0, ..., 0]: start as the crowd, learn where you disagree.
+Simulated cold-start arc (before any deployment): crowd flat at 61%,
+personalized 71% by swipe 20-30, 77% by 50. Active pair selection buys
++2.2 points of held-out accuracy at swipe 20 over random pairs.
+
+![model comparison](assets/model_comparison.png)
 ![accuracy vs gap](assets/acc_vs_gap.png)
 ![calibration](assets/calibration.png)
 
-Caveats, loud:
+## Caveats
 
-- The Bradley-Terry head and ridge-then-rank are statistically tied on
+Read these before quoting the number anywhere.
+
+- **The accuracy line only counts random pairs.** Two of three pairs are chosen
+  actively (highest posterior uncertainty: they teach most, and they are
+  harder than average). Every third pair is uniform random and is the only one
+  the line sees. Train pairs train, measure pairs measure.
+- **The Bradley-Terry head and ridge-then-rank are statistically tied** on
   accuracy. BT stays champion because the game needs calibrated pair
   probabilities (the "72% sure" number), which ranking scores do not give.
-- Text prompts know what a pet is but not what the crowd likes: the zero-shot
-  floor is a coin flip. All the signal is in the embedding geometry, none in
-  the prompt.
-- Pawpularity scores are population-level photo appeal, not any individual's
-  taste. The crowd model is the floor the personal layer must beat, per session.
+- **Pawpularity is population-level photo appeal**, not any individual's
+  taste. The crowd model is the floor the personal layer must beat, per
+  session, on your own screen.
+- **Supervised online preference learning, not RL.** Nothing optimizes which
+  pets you see for engagement; active selection maximizes information about
+  your taste. The true bandit (which pets to show) is explicitly v2.
 - Preference pairs with score gap < 10 are noise and are excluded from
-  training; accuracy vs gap is in the model card.
-- The pool photos are 2023 PetFinder shelter listings (dataset license
-  unknown, dataset card on HF: `drzraf/petfinder-dogs`). Non-commercial demo.
+  training; accuracy vs gap ships in the model card.
+- Pool photos are 2023 PetFinder shelter listings (license unknown, dataset
+  card: HF `drzraf/petfinder-dogs`). Non-commercial demo.
 
-## Rebuild
+## Architecture
+
+An FTI (feature, training, inference) system on Hopsworks. Images become
+vectors at the door: embed jobs stream the petfinder zips, keep the lead photo
+per dog plus a 768-float vector, and never re-embed. The v1 app serves
+inference in-process: the model is a weight vector, and the per-user half is
+session state that can only live server-side anyway. A KServe endpoint returns
+the day "upload your own pet" ships (frozen encoder at request time = genuinely
+heavy = real predictor).
+
+```mermaid
+flowchart LR
+    subgraph sources
+      PF[petfinder-dogs 700k photos] --> E
+      PW[Pawpularity 9,912 scored] --> E2
+    end
+    subgraph Feature
+      E[shard-parallel embed jobs<br/>frozen SigLIP] --> FG[(pet_embeddings<br/>12,312 pets, online)]
+      E2[embed job] --> FG2[(pawpularity_photos)]
+    end
+    FG2 --> FV[taste_fv]
+    subgraph Training
+      FV --> T[Bradley-Terry pairs<br/>vs zero-shot + ridge] --> M[(pet_taste<br/>+ TasteSpace 24 PCs)]
+    end
+    subgraph Inference
+      M --> APP[FastAPI game<br/>per-user Bayesian layer]
+      FG --> APP
+      APP -->|swipes jsonl| FW[retrain job<br/>promotion gate] --> M
+    end
+```
+
+The app is a custom server-rendered FastAPI service (no Streamlit, no front-end
+framework, no CDN). The model's pick for the current pair never leaves the
+server, so devtools cannot cheat the line.
+
+The file-by-file map:
 
 ```
-make pawpularity      # needs kaggle token + accepted competition rules
-make benchmark-job    # pins the encoder in taste_features.py
-make embed-fleet      # petfinder zips -> embeddings + lead photos
+collect/pawpularity.py       kaggle download                            (terminal)
+pipelines/embed.py           zips -> SigLIP vectors + lead photos       (3 parallel jobs + 1)
+pipelines/insert_fg.py       parquets -> FGs + FV                       (terminal)
+pipelines/train.py           BT vs baselines -> registry + TasteSpace   (Hopsworks job)
+pipelines/retrain.py         swipes -> challenger, promotion gate       (scheduled job)
+app/server.py                the game: pair serving, posterior, line    (Hopsworks app)
+taste_features.py            shared frozen-encoder embedding (no skew)
+taste_online.py              TasteSpace + per-user Bayesian posterior
+taste_pairs.py               one definition of a preference pair
+tools/benchmark_encoders.py  clip/siglip/dinov2 shoot-out               (Hopsworks job)
+```
+
+## Reproduce
+
+Clone into a Hopsworks project on the `/hopsfs/...` FUSE mount.
+
+```bash
+make pawpularity      # kaggle token + accepted competition rules required
+make benchmark-job    # pins taste_features.ENCODER (siglip won)
+make embed-fleet      # petfinder zips -> vectors + lead photos, parallel jobs
 make insert           # parquets -> FGs + FV
-make train-job        # prior + baselines -> model registry
+make train-job        # BT prior + baselines -> model registry
 make app              # the game
 make retrain-job      # flywheel (schedule daily)
 ```
+
+No GPU required anywhere: embedding is shard-parallel CPU jobs, heads are
+logistic regressions on stored vectors, the game scores pairs with a dot
+product.
+
+## The demo
+
+Two pets side by side. Before you click, the model has already made its secret
+pick from your posterior; after, it either sneers "how predictable. (74%
+sure)" or admits "you surprised the machine. it is taking notes." Two curves
+grow: the frozen crowd model and the one learning you. The gap between them is
+what the machine knows about you and nobody else. Every swipe is appended to
+the feedback log, and a scheduled retrain folds the actively-selected train
+pairs back into the crowd prior behind a promotion gate: hold the pawpularity
+CV within one SE and beat the champion on live measure swipes, or no ship.
