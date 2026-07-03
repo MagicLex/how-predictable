@@ -62,17 +62,37 @@ through the Hopsworks feature store. The v1 app serves inference in-process
 an HTTP hop). The day "upload your own pet" ships, the frozen encoder moves
 behind a real KServe deployment.
 
+The app itself is a custom server-rendered FastAPI service (no Streamlit, no
+front-end framework, no CDN). The model's pick for the current pair never
+leaves the server, so devtools cannot cheat the accuracy line.
+
 ## Honest numbers
 
-| model | pairwise accuracy (5-fold CV) |
+Crowd model, 9,912 scored photos, preference pairs with score gap >= 10,
+grouped 5-fold CV (no photo on both sides of a split):
+
+| model | pairwise accuracy |
 |---|---|
 | coin flip | 0.500 |
-| zero-shot appeal prompts | TBD |
-| ridge score-then-rank | TBD |
-| Bradley-Terry head (champion) | TBD |
+| zero-shot appeal prompts (CLIP, no training) | 0.511 |
+| ridge score-then-rank | 0.718 |
+| Bradley-Terry head (champion) | **0.719 +/- 0.003** (AUC 0.786) |
+
+Encoder shoot-out on the same task (3,000-photo subset): SigLIP 0.714,
+DINOv2 0.708, CLIP B/32 0.691. SigLIP is pinned; the DINOv2 gap is within
+noise, the CLIP gap is not.
+
+![accuracy vs gap](assets/acc_vs_gap.png)
+![calibration](assets/calibration.png)
 
 Caveats, loud:
 
+- The Bradley-Terry head and ridge-then-rank are statistically tied on
+  accuracy. BT stays champion because the game needs calibrated pair
+  probabilities (the "72% sure" number), which ranking scores do not give.
+- Text prompts know what a pet is but not what the crowd likes: the zero-shot
+  floor is a coin flip. All the signal is in the embedding geometry, none in
+  the prompt.
 - Pawpularity scores are population-level photo appeal, not any individual's
   taste. The crowd model is the floor the personal layer must beat, per session.
 - Preference pairs with score gap < 10 are noise and are excluded from
