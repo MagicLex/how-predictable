@@ -75,7 +75,8 @@ def main():
             pass
         _purge_k8s()
         _stop_zombies(project)
-        time.sleep(10)                      # let the platform settle before run
+        time.sleep(45)                      # 10s raced the platform bookkeeping
+                                            # (KILLED with a healthy pod); 45s holds
     app.run(await_serving=True)
     print("serving:", app.serving)
     print("URL:", app.get_url())
