@@ -1,9 +1,8 @@
-"""Deploy the game as a Hopsworks Streamlit app.
+"""Deploy the game as a custom (FastAPI) Hopsworks app.
 
-Stock python-app-pipeline base: the app imports numpy/pandas/streamlit/hopsworks
-only (taste_online is pure numpy) -- no pickle, no pinned ML stack, no cloned
-env. The thin-client rule from the playbook applies even though inference is
-in-process, because the "model" is a weight vector, not a pickle.
+Custom kind: the pod runs our own server on $APP_PORT -- server-rendered HTML,
+no Streamlit. fastapi/uvicorn are uv-installed at pod start (the gradio pattern
+from the hops-app skill), so the stock python-app-pipeline env needs no clone.
 
 Redeploys use the full recovery sequence (stop, purge lingering k8s deployment,
 drain, stop zombie executions, settle, run) -- app.stop() returns before the
@@ -18,8 +17,11 @@ import hopsworks
 APP_NAME = "howpredictable"
 ENV_NAME = "python-app-pipeline"
 
-rel = str(Path(__file__).resolve()).split("/hopsfs/", 1)[1]
-APP_PATH = str(Path(rel).parent / "app.py")
+_here = Path(__file__).resolve()
+rel = str(_here).split("/hopsfs/", 1)[1]
+APP_PATH = str(Path(rel).parent / "server.py")
+ENTRYPOINT = ('bash -lc "python -m uv pip install --system --no-cache '
+              f'fastapi uvicorn && exec python /hopsfs/{rel.rsplit("/", 1)[0]}/server.py"')
 
 
 def _pods():
@@ -57,11 +59,14 @@ def _stop_zombies(project):
 def main():
     project = hopsworks.login()
     apps = project.get_app_api()
-    print(f"app_path={APP_PATH} env={ENV_NAME}", flush=True)
+    print(f"app_path={APP_PATH}", flush=True)
     app = apps.get_app(APP_NAME)
     if app is None:
-        app = apps.create_app(name=APP_NAME, app_path=APP_PATH,
-                              environment=ENV_NAME, memory=2048, cores=1.0)
+        app = apps.create_app(
+            name=APP_NAME, app_path=APP_PATH, app_kind="CUSTOM",
+            entrypoint_command=ENTRYPOINT, app_port=8000,
+            environment=ENV_NAME, memory=2048, cores=1.0,
+            description="how predictable. -- the machine calls your click")
     else:
         try:
             app.stop()

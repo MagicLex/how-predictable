@@ -19,7 +19,7 @@ train-job:           ## Bradley-Terry prior vs baselines, register champion
 		--env pandas-training-pipeline --run --wait --overwrite
 
 app:                 ## deploy the Streamlit game (v1 inference lives in-app)
-	python3 app/deploy_app.py
+	python3 app/deploy_app.py  # custom FastAPI app
 
 retrain-job:         ## flywheel: swipe train-pairs + pawpularity -> challenger (schedule daily)
 	hops job deploy predictable-retrain pipelines/retrain.py \

@@ -1,6 +1,0 @@
-[server]
-fileWatcherType = "none"
-
-[theme]
-base = "dark"
-primaryColor = "#e86343"
