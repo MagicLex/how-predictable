@@ -32,6 +32,9 @@ import numpy as np
 
 SIGMA0_GLOBAL = 0.25    # prior std on the crowd-logit coefficient (dim 0)
 SIGMA0_TASTE = 1.0      # prior std on the personal taste dims
+VAR_FLOOR = 0.02        # ADF never raises variance; without a floor the
+                        # posterior turns arrogant ("100% sure", 53% right).
+                        # The floor models user noise/drift and caps confidence.
 _PROBIT = np.pi / 8.0
 
 
@@ -100,7 +103,7 @@ class UserPosterior:
         p = _sigmoid(float(self.mean @ phi))
         lam = max(p * (1.0 - p), 1e-6)
         prec = 1.0 / self.var + lam * phi * phi
-        self.var = 1.0 / prec
+        self.var = np.maximum(1.0 / prec, VAR_FLOOR)
         self.mean = self.mean + self.var * phi * (y - p)
         self.n_obs += 1
 

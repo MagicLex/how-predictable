@@ -163,8 +163,9 @@ async def swipe(request: Request):
             s["hits_personal"].append(bool(pick_p) == bool(y))
             s["hits_global"].append(bool(pick_g) == bool(y))
         conf = pair["p_personal"] if y else 1 - pair["p_personal"]
+        # an honest machine never claims 100%: display cap at 95
         s["last"] = {"read_you": bool(pick_p) == bool(y),
-                     "confidence": round(100 * max(conf, 1 - conf))}
+                     "confidence": min(95, round(100 * max(conf, 1 - conf)))}
         s["posterior"].update(x, y)
         _log_swipe(s, pair, y, pick_p)
         s["n_swipes"] += 1
