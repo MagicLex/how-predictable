@@ -20,9 +20,12 @@ COMP = "petfinder-pawpularity-score"
 
 
 def main():
-    cred = os.path.expanduser("~/.kaggle/kaggle.json")
-    if not os.path.exists(cred):
-        sys.exit(f"missing {cred} -- create an API token on kaggle.com and put it there")
+    creds = [os.path.expanduser(f"~/.kaggle/{f}")
+             for f in ("access_token", "kaggle.json")]
+    if not any(os.path.exists(c) for c in creds) \
+            and not os.environ.get("KAGGLE_API_TOKEN"):
+        sys.exit("no kaggle credentials -- create an API token on kaggle.com "
+                 "and save it to ~/.kaggle/access_token")
     os.makedirs(DEST, exist_ok=True)
     csv = os.path.join(DEST, "train.csv")
     if os.path.exists(csv):
