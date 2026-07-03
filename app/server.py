@@ -51,7 +51,6 @@ STATE = {"space": None, "version": None, "pet_ids": None, "emb": None}
 SESSIONS = {}
 
 
-@app.on_event("startup")
 def boot():
     import hopsworks
     proj = hopsworks.login()
@@ -303,12 +302,15 @@ render();
 
 
 # The platform proxy does NOT strip its prefix: requests arrive as
-# $APP_BASE_URL_PATH/... , so the app mounts under it when set.
+# $APP_BASE_URL_PATH/... , so the app mounts under it when set. Startup events
+# of a MOUNTED sub-app never fire (Starlette runs only the outer lifespan), so
+# boot() attaches to the outer app explicitly.
 if BASE:
     asgi = FastAPI()
     asgi.mount(BASE, app)
 else:
     asgi = app
+asgi.add_event_handler("startup", boot)
 
 
 if __name__ == "__main__":
