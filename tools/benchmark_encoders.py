@@ -59,8 +59,28 @@ def load_subset():
     return imgs, np.array(scores)
 
 
+def fit_logistic(X, y, C=1.0):
+    """L2 logistic via torch LBFGS -- same objective as sklearn's
+    LogisticRegression(C=C, fit_intercept=False); the torch env has no sklearn."""
+    import torch
+    Xt = torch.tensor(X, dtype=torch.float32)
+    yt = torch.tensor(y, dtype=torch.float32)
+    w = torch.zeros(X.shape[1], requires_grad=True)
+    opt = torch.optim.LBFGS([w], max_iter=200)
+    lam = 1.0 / (C * len(y))
+
+    def closure():
+        opt.zero_grad()
+        loss = torch.nn.functional.binary_cross_entropy_with_logits(
+            Xt @ w, yt) + lam * (w @ w) / 2
+        loss.backward()
+        return loss
+
+    opt.step(closure)
+    return w.detach().numpy().astype(np.float64)
+
+
 def cv_pairwise_acc(emb, scores, rng):
-    from sklearn.linear_model import LogisticRegression
     fold_of = assign_folds(len(scores), FOLDS, rng)
     accs = []
     for k in range(FOLDS):
@@ -68,9 +88,8 @@ def cv_pairwise_acc(emb, scores, rng):
         te = make_pairs(np.where(fold_of == k)[0], scores, rng, PAIRS_PER_FOLD // 4)
         Xtr, ytr = pair_features(emb, tr)
         Xte, yte = pair_features(emb, te)
-        clf = LogisticRegression(C=1.0, max_iter=2000, fit_intercept=False)
-        clf.fit(Xtr, ytr)
-        accs.append(float((clf.predict(Xte) == yte).mean()))
+        w = fit_logistic(Xtr, ytr)
+        accs.append(float((((Xte @ w) > 0).astype(int) == yte).mean()))
     return float(np.mean(accs)), float(np.std(accs) / np.sqrt(FOLDS))
 
 
