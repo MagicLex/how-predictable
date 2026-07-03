@@ -6,8 +6,6 @@ Two pets. Click the one you like. The machine has already guessed which one
 you'll pick, and the line at the top shows how often it reads you right. It
 starts near a coin flip and climbs as it learns you: that line is the product.
 
-Live demo: Hopsworks app `howpredictable` (project createnew).
-
 ![model comparison](assets/model_comparison.png)
 
 ## What it shows
