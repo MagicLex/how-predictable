@@ -11,7 +11,9 @@ Embeddings are L2-normalized float32. Backbones are frozen everywhere: we only
 train heads on top, which keeps the whole system CPU-viable.
 """
 import numpy as np
-import torch
+
+# torch imports lazily inside the embed functions: the pandas training env has
+# no torch, and it only needs this module's constants (ENCODER/MODEL_ID/dim).
 
 ENCODERS = {
     "clip":   {"model_id": "openai/clip-vit-base-patch32",     "dim": 512},
@@ -41,6 +43,7 @@ def _load(key=None):
 
 
 def _image_features(model, inp):
+    import torch
     if hasattr(model, "get_image_features"):        # CLIP / SigLIP
         f = model.get_image_features(**inp)
         return f if isinstance(f, torch.Tensor) else f.pooler_output
@@ -50,6 +53,7 @@ def _image_features(model, inp):
 
 def embed_images(pil_images, batch_size=64, encoder=None):
     """List of PIL images -> (n, dim) float32 L2-normalized numpy array."""
+    import torch
     model, proc = _load(encoder)
     out = []
     with torch.no_grad():
@@ -73,6 +77,7 @@ APPEAL_PROMPTS = ("an adorable, sharp, well-lit photo of a cute pet looking at t
 
 def zero_shot_appeal(pil_images, batch_size=64):
     """(n,) zero-shot appeal score per image, in CLIP space."""
+    import torch
     model, proc = _load("clip")
     from transformers import AutoTokenizer
     tok = AutoTokenizer.from_pretrained(ENCODERS["clip"]["model_id"])
