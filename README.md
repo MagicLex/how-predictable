@@ -144,3 +144,5 @@ what the machine knows about you and nobody else. Every swipe is appended to
 the feedback log, and a scheduled retrain folds the actively-selected train
 pairs back into the crowd prior behind a promotion gate: hold the pawpularity
 CV within one SE and beat the champion on live measure swipes, or no ship.
+
+![the app](assets/demo.jpg)
